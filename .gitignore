@@ -1,0 +1,3 @@
+quasioptimal.io.wsgi
+env/*
+__pycache__/*
