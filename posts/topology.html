@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Topology for the working programmer - quasioptimal</title>
+    <link rel="stylesheet" href="../style.css">
+    <!-- highlight.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        hljs.highlightAll();
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false}
+          ]
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <a href="../index.html" class="back-link">&larr; back</a>
+    <header class="post-header">
+      <h1 class="post-title">Topology for the working programmer</h1>
+      <p class="post-meta">2026-03-05</p>
+    </header>
+    <article>
+      <p>Most programmers encounter topology without knowing it. Every time you reason about which states a system can reach through continuous transformations, or when you consider whether two configurations are "essentially the same," you are doing topology. The goal of this essay is to make that connection explicit and, in doing so, to equip you with a small but sharp set of ideas.</p>
+      <p>We will not pursue generality for its own sake. Instead, we will develop just enough of the theory to see why it matters for the kinds of problems that arise in practice: configuration spaces, type theory, and the geometry of data.</p>
+
+      <h2>Open sets and the shape of possibility</h2>
+      <p>A topology on a set $X$ is a collection $\tau$ of subsets of $X$, called <em>open sets</em>, satisfying three axioms: the empty set and $X$ itself are open, arbitrary unions of open sets are open, and finite intersections of open sets are open. This is the entire definition. Its power lies not in its complexity but in its restraint.</p>
+      <p>Consider the real line $\mathbb{R}$ with its usual topology. The open sets are unions of open intervals. An interval like $(0, 1)$ is open because for every point in it, you can find a small neighborhood that stays inside. A closed interval like $[0, 1]$ is not open because the endpoints have no such wiggle room.</p>
+      <p>In programming terms, think of an open set as a predicate that is "robust" -- if it holds for some input, it continues to hold for small perturbations of that input. A type checker that accepts a program should still accept it after trivial refactoring. That stability is openness.</p>
+
+      <h2>Continuity as structure preservation</h2>
+      <p>A function $f: X \to Y$ between topological spaces is continuous if the preimage of every open set in $Y$ is open in $X$. This is the topological definition, and it generalizes the epsilon-delta definition from calculus. The key insight is that continuity is about preserving structure, not about formulas.</p>
+
+      <blockquote>
+        <p>The purpose of abstraction is not to be vague, but to create a new semantic level in which one can be absolutely precise.</p>
+        <p>-- Edsger Dijkstra</p>
+      </blockquote>
+
+      <p>In Haskell, we might express a continuous map between finite topological spaces as a function that respects the open-set structure:</p>
+
+<pre><code class="language-haskell">type Topology a = [[a]]  -- list of open sets (each a list of elements)
+
+isContinuous :: (Eq a, Eq b) => Topology a -> Topology b -> (a -> b) -> Bool
+isContinuous tauX tauY f =
+  all (\open_y -> preimage f open_y `elem` tauX) tauY
+
+preimage :: Eq b => (a -> b) -> [b] -> [a] -> [a]
+preimage f ys domain = filter (\x -> f x `elem` ys) domain</code></pre>
+
+      <p>This is a simplification, of course. Real topological spaces are generally infinite. But the code captures the essential idea: continuity is a property of the relationship between two structures, mediated by a function.</p>
+
+      <h3>A note on homeomorphisms</h3>
+      <p>When a continuous function has a continuous inverse, we call it a homeomorphism. Two spaces related by a homeomorphism are topologically identical -- they have exactly the same open-set structure, just with different labels. The classic example: a coffee mug and a donut are homeomorphic, because each has exactly one hole.</p>
+
+      <h2>Compactness and the finite mind</h2>
+      <p>A space is compact if every open cover has a finite subcover. This is the topologist's way of saying "finite-like." Compact spaces are the topological analogue of finite sets: they are the spaces where you can always reduce an infinite search to a finite one.</p>
+      <p>The Heine-Borel theorem tells us that in $\mathbb{R}^n$, the compact sets are precisely the closed and bounded ones. The closed interval $[0, 1]$ is compact. The open interval $(0, 1)$ is not, because the cover</p>
+
+      <div class="math-display">
+        $$\left\{ \left(\frac{1}{n}, 1\right) : n \in \mathbb{N} \right\}$$
+      </div>
+
+      <p>has no finite subcover. The point $0$ keeps escaping to the boundary, and no finite collection of these intervals can catch it.</p>
+      <p>For programmers, compactness is closely related to the idea of total functions. A function on a compact space that is defined everywhere and continuous is guaranteed to attain its maximum and minimum. There are no edge cases that slip through. This is the extreme value theorem, and it is a consequence of compactness.</p>
+
+      <h2>What topology buys you</h2>
+      <p>The point of all this is not to turn programmers into mathematicians. It is to recognize that the structures we already use -- type systems, module boundaries, API contracts -- are topological in character. When we say that a refactoring is "safe," we mean that it preserves the relevant open-set structure. When we say that two implementations are "equivalent," we often mean they are homeomorphic.</p>
+      <p>Topology gives us a language for these intuitions. And a good language, as Dijkstra knew, is the first step toward precise thought.</p>
+    </article>
+  </body>
+</html>
