@@ -160,8 +160,25 @@ article h3 + p,
 article pre + p,
 article blockquote + p,
 article figure + p,
+article ul + p,
+article ol + p,
 article .math-display + p {
   text-indent: 0;
+}
+
+/* === Lists === */
+article ul,
+article ol {
+  margin: 1rem 0;
+  padding-left: 1.75em;
+}
+
+article li {
+  margin-bottom: 0.5rem;
+}
+
+article li:last-child {
+  margin-bottom: 0;
 }
 
 /* === Blockquotes === */
@@ -173,7 +190,7 @@ blockquote {
   font-style: italic;
 }
 
-blockquote p:last-child {
+blockquote p:not(:only-child):last-child {
   font-style: normal;
   color: var(--muted);
   font-size: 0.9rem;
@@ -233,6 +250,143 @@ figcaption {
   border-top: 1px solid var(--rule);
   font-size: 0.9rem;
   color: var(--muted);
+  text-align: left;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
+article sup {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: super;
+  margin-left: 0.1em;
+}
+
+article sup a {
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+article sup a:hover {
+  text-decoration: none;
+  color: var(--heading);
+}
+
+/* === Footnote hover popover === */
+.fn-ref {
+  position: relative;
+  display: inline;
+}
+
+.fn-popover {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(0.25rem);
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1.55;
+  color: var(--text);
+  text-align: left;
+  text-indent: 0;
+  hyphens: none;
+  -webkit-hyphens: none;
+  white-space: normal;
+  vertical-align: baseline;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* Invisible bridge so cursor can travel into the popover without losing :hover */
+.fn-popover::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 0.6rem;
+}
+
+/* Pointer triangle */
+.fn-popover::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1a1a1a;
+}
+
+.fn-ref:hover .fn-popover,
+.fn-ref:focus-within .fn-popover,
+.ref:hover .fn-popover,
+.ref:focus-within .fn-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0s;
+}
+
+/* Inline desideratum references like (1), (2), ... */
+.ref {
+  position: relative;
+  display: inline;
+  border-bottom: 1px dotted var(--muted);
+  cursor: help;
+  transition: border-color 0.15s ease;
+}
+
+.ref:hover,
+.ref:focus-within {
+  border-bottom-color: var(--accent);
+}
+
+.fn-popover a {
+  color: var(--accent);
+}
+
+.fn-popover a:hover {
+  text-decoration: underline;
+}
+
+.footnote-list {
+  margin: 0 0 1rem 0;
+  padding-left: 1.75em;
+}
+
+.footnote-list li {
+  margin-bottom: 0.5rem;
+}
+
+.footnote-list li:last-child {
+  margin-bottom: 0;
+}
+
+.footnote-list li:target {
+  color: var(--text);
+}
+
+.footnote-backref {
+  color: var(--muted);
+  margin-left: 0.35em;
+  text-decoration: none;
+}
+
+.footnote-backref:hover {
+  color: var(--accent);
+  text-decoration: none;
 }
 
 /* === KaTeX Overrides === */
