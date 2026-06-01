@@ -1,16 +1,62 @@
 {% extends "base.html" %}
+{% import "macros.html" as macros %}
 {% block title %}Quasioptimal{% endblock title %}
 {% block content %}
-<section class="site-brief">
-  {{ section.content | safe }}
+{# Single-page shell. All three sections are rendered server-side and toggled client-side
+   by js/spa.js via the URL hash (/, /#commonplace, /#bibliography). Each section is its own
+   .panel; only the active one is shown. Deep links work: the inline head script reveals the
+   hash-named panel before first paint. With JS fully disabled, the <noscript> rule in
+   base.html shows all sections stacked so nothing is hidden. #}
+
+<section class="panel" id="writing" tabindex="-1" aria-labelledby="nav-writing">
+  <div class="site-brief">{{ section.content | safe }}</div>
+  {% set posts = get_section(path="posts/_index.md") %}
+  <ul class="post-list">
+    {% for post in posts.pages %}
+    <li>
+      <span class="post-date">{{ post.date }}</span>
+      <a href="{{ post.permalink }}">{{ post.title }}</a>
+    </li>
+    {% endfor %}
+  </ul>
 </section>
-{% set posts = get_section(path="posts/_index.md") %}
-<ul class="post-list">
-  {% for post in posts.pages %}
-  <li>
-    <span class="post-date">{{ post.date }}</span>
-    <a href="{{ post.permalink }}">{{ post.title }}</a>
-  </li>
+
+<section class="panel" id="commonplace" tabindex="-1" aria-labelledby="nav-commonplace">
+  {% set quotes = load_data(path="data/commonplace.json") %}
+  {# The featured slot is the first entry server-side; commonplace.js swaps it for a random
+     pick per visit, degrading cleanly to the first entry when JS is off. #}
+  <div id="commonplace-featured" class="commonplace-featured">
+    {%- if quotes | length > 0 %}{% set featured = quotes | first %}{{ macros::quote(entry=featured, class="quote quote-large") }}{% endif -%}
+  </div>
+  <div id="commonplace-list" class="commonplace-list">
+    <h2 class="commonplace-all-heading">All entries</h2>
+    {%- for entry in quotes %}{{ macros::quote(entry=entry, class="quote") }}{% endfor -%}
+  </div>
+</section>
+
+<section class="panel" id="bibliography" tabindex="-1" aria-labelledby="nav-bibliography">
+  {% set entries = load_data(path="data/bibliography.json") %}
+  {# Authors are stored "Last, First" (standard bibliography order). The display shows only
+     the surname (the part before the comma), and sorting by the full author string therefore
+     orders entries alphabetically by surname. Topics are sorted A–Z. #}
+  {% set topics = entries | map(attribute="topic") | unique | sort %}
+  {% for topic in topics %}
+    <section class="biblio-topic-section">
+      <h2 class="biblio-topic">{{ topic }}</h2>
+      {% set items = entries | filter(attribute="topic", value=topic) | sort(attribute="author") %}
+      {% for entry in items %}
+      <div class="biblio-entry">
+        <p class="biblio-line">
+          {%- if entry.author or entry.year %}<span class="biblio-meta">{% if entry.author %}{{ entry.author | split(pat=",") | first }}{% endif %}{% if entry.author and entry.year %} &mdash; {% endif %}{% if entry.year %}{{ entry.year }}{% endif %} &mdash; </span>{% endif -%}
+          {%- if entry.url %}<a class="biblio-title-link" href="{{ entry.url }}" rel="noopener">{% endif -%}
+          {%- if entry.type == "book" %}<cite class="biblio-book-title">{{ entry.title }}</cite>{% else %}&ldquo;{{ entry.title }}&rdquo;{% endif -%}
+          {%- if entry.url %}</a>{% endif -%}
+        </p>
+      </div>
+      {% endfor %}
+    </section>
   {% endfor %}
-</ul>
+</section>
+
+<script src="/js/commonplace.js" defer></script>
 {% endblock content %}

@@ -1,100 +1,107 @@
-// Progressive-enhancement SPA navigation.
+// Single-page section switching.
 //
-// Zola builds /, /bibliography/, and /commonplace/ as ordinary pages. On these "shell"
-// pages we swap the #view container instead of doing a full reload, and use the History
-// API so the address bar shows the real path (not a #hash). Posts and external links
-// navigate normally, and with JS disabled everything is just plain links — no regressions.
+// All three sections (Writing, Commonplace, Bibliography) are rendered into the home page as
+// .panel elements; only one is shown at a time. The URL hash names the active section
+// (/ = writing, /#commonplace, /#bibliography), so back/forward and deep links work. The
+// switch animates transform + opacity only — both are compositor-only, so it never triggers
+// layout and can't stutter. The container height snaps once at the start of each switch (by
+// design — animating height would reintroduce per-frame layout).
+//
+// Progressive enhancement: if this script fails to load, nav clicks fall back to full-page
+// reloads and the inline head script still shows the hash-named section on arrival. With JS
+// fully disabled, base.html's <noscript> rule shows all sections stacked.
 (function () {
-  if (!window.history || !window.fetch || !window.DOMParser) return;
+  var PANELS = ["writing", "commonplace", "bibliography"];
+  var els = {};
+  PANELS.forEach(function (name) { els[name] = document.getElementById(name); });
 
-  var SHELL = ["/", "/bibliography/", "/commonplace/"];
-  var isShell = function (path) { return SHELL.indexOf(path) !== -1; };
-  var view = function () { return document.getElementById("view"); };
+  // Not the single-page shell (e.g. a post): leave every link to normal navigation.
+  if (!els.writing || !els.commonplace || !els.bibliography) return;
 
-  // Prefetch cache: warm it on hover/focus so the click itself has nothing to wait for.
-  var cache = new Map();
-  function fetchPage(path) {
-    if (!cache.has(path)) {
-      cache.set(path, fetch(path, { headers: { "X-Requested-With": "fetch" } })
-        .then(function (res) {
-          if (!res.ok) throw new Error(res.status);
-          return res.text();
-        })
-        .catch(function (err) { cache.delete(path); throw err; }));
-    }
-    return cache.get(path);
+  var root = document.documentElement;
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function panelFor(url) {
+    if (url.pathname !== "/") return null;            // only the home page hosts the panels
+    var name = url.hash.replace(/^#/, "");
+    return els[name] ? name : "writing";
   }
 
-  function setActiveNav(pathname) {
+  function setActiveNav(name) {
     document.querySelectorAll(".site-nav a").forEach(function (a) {
-      if (new URL(a.href).pathname === pathname) a.setAttribute("aria-current", "page");
+      if (a.getAttribute("data-panel") === name) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
   }
 
-  function runScripts(container) {
-    // Script nodes inserted via DOM swap don't execute on their own; re-create them so
-    // per-view behaviour (e.g. the commonplace random-featured picker) runs after a swap.
-    container.querySelectorAll("script").forEach(function (old) {
-      var s = document.createElement("script");
-      for (var i = 0; i < old.attributes.length; i++) {
-        s.setAttribute(old.attributes[i].name, old.attributes[i].value);
-      }
-      if (!old.src) s.textContent = old.textContent;
-      old.replaceWith(s);
+  var current = panelFor(new URL(location.href)) || "writing";
+
+  // Hand off from the declarative data-panel state to class-driven state, without animating
+  // the first render.
+  PANELS.forEach(function (name) {
+    els[name].className = name === current ? "panel is-active" : "panel";
+  });
+  root.removeAttribute("data-panel");
+  setActiveNav(current);
+
+  function onceAnimEnd(el, fn) {
+    el.addEventListener("animationend", function handler() {
+      el.removeEventListener("animationend", handler);
+      fn();
     });
   }
 
-  async function navigate(path, push) {
-    var current = view();
-    if (!current) { location.assign(path); return; }
+  function setPanel(name, animate) {
+    if (!els[name] || name === current) return;
+    var incoming = els[name];
+    var outgoing = els[current];
 
-    var html;
-    try {
-      html = await fetchPage(path);
-    } catch (e) { location.assign(path); return; }   // network/HTTP error: fall back to full load
+    // Finalize any panel still mid-leave from a rapid previous switch.
+    PANELS.forEach(function (n) {
+      if (n !== current && n !== name) els[n].className = "panel";
+    });
 
-    var doc = new DOMParser().parseFromString(html, "text/html");
-    var next = doc.getElementById("view");
-    if (!next) { location.assign(path); return; }
+    current = name;
+    setActiveNav(name);
+    window.scrollTo(0, 0);
 
-    if (push) history.pushState({ spa: true }, "", path);
+    if (!animate || reduceMotion) {
+      outgoing.className = "panel";
+      incoming.className = "panel is-active";
+    } else {
+      incoming.className = "panel is-active anim-in";
+      outgoing.className = "panel is-leaving";
+      onceAnimEnd(incoming, function () { incoming.classList.remove("anim-in"); });
+      onceAnimEnd(outgoing, function () {
+        if (els[current] !== outgoing) outgoing.className = "panel";
+      });
+    }
 
-    var swap = function () {
-      current.replaceWith(next);
-      document.title = doc.title;
-      setActiveNav(path);
-      runScripts(next);
-      window.scrollTo(0, 0);
-      next.focus({ preventScroll: true });   // move focus to the new content for a11y
-    };
-
-    if (document.startViewTransition) document.startViewTransition(swap);
-    else swap();
+    // Focus only after the panel is shown — focusing a display:none element is a no-op.
+    incoming.focus({ preventScroll: true });   // move focus to the new section for a11y
   }
 
+  // Intercept in-page links that target the home page; everything else navigates normally.
   document.addEventListener("click", function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (!document.querySelector(".site-nav")) return;   // not on a shell page (e.g. a post) -> leave links alone
     var a = e.target.closest("a");
     if (!a || !a.getAttribute("href")) return;
     var url = new URL(a.href, location.href);
-    if (url.origin !== location.origin) return;         // external link
-    if (!isShell(url.pathname)) return;                 // post / other -> normal full navigation
+    if (url.origin !== location.origin) return;
+    var name = panelFor(url);
+    if (name === null) return;                        // link leaves the home page -> full nav
     e.preventDefault();
-    if (url.pathname !== location.pathname) navigate(url.pathname, true);
+    var href = name === "writing" ? "/" : "/#" + name;
+    if (name !== current) {
+      history.pushState({ panel: name }, "", href);
+      setPanel(name, true);
+    } else if (location.hash || href === "/") {
+      history.replaceState({ panel: name }, "", href);   // normalize URL without a switch
+    }
   });
 
-  function maybePrefetch(target) {
-    var a = target && target.closest && target.closest("a");
-    if (!a || !a.getAttribute("href")) return;
-    var url = new URL(a.href, location.href);
-    if (url.origin === location.origin && isShell(url.pathname)) fetchPage(url.pathname).catch(function () {});
-  }
-  document.addEventListener("mouseover", function (e) { maybePrefetch(e.target); });
-  document.addEventListener("focusin", function (e) { maybePrefetch(e.target); });
-
   window.addEventListener("popstate", function () {
-    if (isShell(location.pathname)) navigate(location.pathname, false);
+    var name = panelFor(new URL(location.href)) || "writing";
+    setPanel(name, true);
   });
 })();

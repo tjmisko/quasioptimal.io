@@ -9,17 +9,34 @@
     <meta name="darkreader-lock">
     <title>{% block title %}{{ config.title }}{% endblock title %}</title>
     <link rel="stylesheet" href="/style.css">
+    <script>
+      // Reveal the hash-named panel before first paint so a deep link such as /#bibliography
+      // doesn't flash the default section. js/spa.js takes over for animated switching once
+      // loaded; even if spa.js fails to load, nav clicks fall back to full reloads and this
+      // script still shows the right section on arrival.
+      (function () {
+        var ok = { writing: 1, commonplace: 1, bibliography: 1 };
+        var h = location.hash.slice(1);
+        document.documentElement.setAttribute("data-panel", ok[h] ? h : "writing");
+      })();
+    </script>
+    <noscript>
+      <!-- The panels are revealed by the script above; with JS disabled, show every section
+           stacked so all content stays readable (no tabbing, but nothing is hidden). -->
+      <style>.panel { display: block !important; }</style>
+    </noscript>
     {% block head %}{% endblock head %}
   </head>
   <body class="{% block bodyclass %}{% endblock bodyclass %}">
     {% block chrome %}
-    {% set cp = current_path | default(value="") %}
+    {# Hash-based sections: Writing is the default/current target server-side; on the single
+       page, spa.js corrects aria-current from the hash once it loads. #}
     <header>
-      <a class="site-title-link" href="/"><h1 class="site-title">Quasioptimal</h1></a>
+      <a class="site-title-link" href="/" data-panel="writing"><h1 class="site-title">Quasioptimal</h1></a>
       <nav class="site-nav">
-        <a href="/"{% if cp == "/" or cp is starting_with("/posts") %} aria-current="page"{% endif %}>Writing</a>
-        <a href="/commonplace/"{% if cp is starting_with("/commonplace") %} aria-current="page"{% endif %}>Commonplace</a>
-        <a href="/bibliography/"{% if cp is starting_with("/bibliography") %} aria-current="page"{% endif %}>Sources</a>
+        <a id="nav-writing" href="/" data-panel="writing" aria-current="page">Writing</a>
+        <a id="nav-commonplace" href="/#commonplace" data-panel="commonplace">Commonplace</a>
+        <a id="nav-bibliography" href="/#bibliography" data-panel="bibliography">Sources</a>
       </nav>
     </header>
     {% endblock chrome %}
