@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sources &middot; Quasioptimal{% endblock title %}
+{% block bodyclass %}page{% endblock bodyclass %}
+{% block content %}
+    <main id="bibliography" class="biblio">
+    {% set entries = load_data(path="data/bibliography.json") %}
+    {# Authors are stored "Last, First" (standard bibliography order). The display shows
+       only the surname (the part before the comma), and sorting by the full author string
+       therefore orders entries alphabetically by surname. Topics are sorted A–Z. #}
+    {% set topics = entries | map(attribute="topic") | unique | sort %}
+    {% for topic in topics %}
+      <section class="biblio-topic-section">
+        <h2 class="biblio-topic">{{ topic }}</h2>
+        {% set items = entries | filter(attribute="topic", value=topic) | sort(attribute="author") %}
+        {% for entry in items %}
+        <div class="biblio-entry">
+          <p class="biblio-line">
+            {%- if entry.author or entry.year %}<span class="biblio-meta">{% if entry.author %}{{ entry.author | split(pat=",") | first }}{% endif %}{% if entry.author and entry.year %} &mdash; {% endif %}{% if entry.year %}{{ entry.year }}{% endif %} &mdash; </span>{% endif -%}
+            {%- if entry.url %}<a class="biblio-title-link" href="{{ entry.url }}" rel="noopener">{% endif -%}
+            {%- if entry.type == "book" %}<cite class="biblio-book-title">{{ entry.title }}</cite>{% else %}&ldquo;{{ entry.title }}&rdquo;{% endif -%}
+            {%- if entry.url %}</a>{% endif -%}
+          </p>
+        </div>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    </main>
+{% endblock content %}

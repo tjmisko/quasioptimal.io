@@ -7,6 +7,7 @@
 
 /* === Custom Properties === */
 :root {
+  color-scheme: dark;
   --bg: #0e0e0e;
   --text: #e0e0e0;
   --heading: #f5f5f5;
@@ -29,16 +30,17 @@ html {
 
 body {
   color: var(--text);
+  background-color: var(--bg);
   font-family: var(--serif);
   font-size: 1.15rem;
   line-height: 1.8;
   max-width: 38em;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 3rem 1.5rem 4rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* === Links === */
@@ -64,12 +66,6 @@ a:hover {
   color: var(--muted);
   font-size: 1rem;
   margin-top: 0.25rem;
-}
-
-.site-rule {
-  border: none;
-  border-top: 1px solid var(--rule);
-  margin: 1.5rem 0;
 }
 
 .post-list {
@@ -413,7 +409,12 @@ article sup a:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 1.25rem;
+  width: fit-content;          /* the rule below spans only the nav items, not the full width */
+  max-width: 100%;             /* still wraps on narrow screens */
   margin-top: 0.6rem;
+  padding-bottom: 0.4rem;      /* small gap between the links and the rule */
+  margin-bottom: 1.05rem;      /* gap to the content below */
+  border-bottom: 1px solid var(--rule);
   font-family: var(--mono);
   font-size: 0.8rem;
   letter-spacing: 0.03em;
@@ -437,15 +438,10 @@ article sup a:hover {
 .site-brief {
   color: var(--muted);
   margin-bottom: 2rem;
+  display: none; /* hidden for now — remove this line to show the brief again */
 }
 
 /* === Standalone Pages === */
-body.page {
-  justify-content: flex-start;
-  padding-top: 3rem;
-  padding-bottom: 4rem;
-}
-
 .page-title {
   font-size: 1.8rem;
   font-weight: 400;
@@ -479,12 +475,12 @@ body.page {
 }
 
 .biblio-entry {
-  margin-bottom: 1.1rem;
+  margin-bottom: 0.15rem;
 }
 
 .biblio-line {
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
 .biblio-book-title,
@@ -602,5 +598,47 @@ body.page {
 
   .quote-large blockquote {
     font-size: 1.1rem;
+  }
+}
+
+/* === SPA view swap === */
+#view {
+  width: 100%;
+  view-transition-name: view; /* animate only the content; the header (root) stays put */
+}
+
+#view:focus {
+  outline: none; /* focus is moved here on swap for screen readers, but not shown visually */
+}
+
+/* Snappy directional slide: old content slides out left, new slides in from the right. */
+::view-transition-group(view) {
+  animation-duration: 160ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+::view-transition-old(view) {
+  animation: view-slide-out 160ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+::view-transition-new(view) {
+  animation: view-slide-in 160ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+/* Don't crossfade the whole page — that's what made it feel slow. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+@keyframes view-slide-out {
+  to { opacity: 0; transform: translateX(-28px); }
+}
+@keyframes view-slide-in {
+  from { opacity: 0; transform: translateX(28px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(view),
+  ::view-transition-old(view),
+  ::view-transition-new(view) {
+    animation: none;
   }
 }
