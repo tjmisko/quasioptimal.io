@@ -192,7 +192,9 @@ blockquote {
   font-style: italic;
 }
 
-blockquote p:not(:only-child):last-child {
+/* Mute the last paragraph of an article blockquote (the attribution line). Scoped to article
+   so it never dims the final paragraph of a multi-paragraph commonplace quote. */
+article blockquote p:not(:only-child):last-child {
   font-style: normal;
   color: var(--muted);
   font-size: 0.9rem;
@@ -414,7 +416,7 @@ article sup a:hover {
 .site-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: 1.5rem;
   width: fit-content;          /* the rule below spans only the nav items, not the full width */
   max-width: 100%;             /* still wraps on narrow screens */
   margin-top: 0.6rem;
@@ -515,10 +517,93 @@ article sup a:hover {
   vertical-align: middle;
 }
 
+/* The blurb explaining why a source is listed. Rendered HTML from the note's `public-note`
+   frontmatter. Visible by default so it's readable with JS off; js/bibliography.js collapses it
+   into a click-to-expand panel (see the `.js` rules below). */
 .biblio-note {
   color: var(--muted);
   font-size: 0.9rem;
-  margin: 0.2rem 0 0;
+  margin: 0.35rem 0 0;
+}
+
+.biblio-note p {
+  margin: 0;
+}
+
+.biblio-note p + p {
+  margin-top: 0.5rem;
+}
+
+/* Give entries that carry a blurb more breathing room from the next entry (no-JS view). */
+.biblio-entry:has(.biblio-note) {
+  margin-bottom: 0.75rem;
+}
+
+/* Right-aligned link to a longer review (book-and-pencil icon), shown only when the note set
+   `public-review`. It's a real link, so a click follows it rather than toggling the blurb. */
+.biblio-review-link {
+  float: right;
+  margin-left: 0.6rem;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.biblio-review-link:hover {
+  color: var(--accent);
+}
+
+.biblio-review-icon {
+  display: block;
+  width: 1.05em;
+  height: 1.05em;
+  margin-top: 0.12em;
+}
+
+/* === Bibliography blurb: click-to-expand (progressive enhancement) ===
+   With scripting on (`html.js`, set before first paint), each blurb starts collapsed and opens
+   when its entry is clicked. Height is animated with the grid-rows 0fr→1fr technique, which is
+   smooth for content of unknown height; `.biblio-note-inner` is the single grid item that clips.
+   If bibliography.js never runs the blurb simply stays collapsed — the citation itself, the
+   essential content, is always visible. */
+html.js .biblio-entry:has(.biblio-note) {
+  margin-bottom: 0.15rem;
+}
+
+html.js .biblio-note {
+  margin-top: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+}
+
+html.js .biblio-note-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+html.js .biblio-entry.is-open > .biblio-note {
+  margin-top: 0.4rem;
+  margin-bottom: 0.55rem;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Only entries that carry a blurb are clickable; the pointer cursor is the only affordance. */
+html.js .biblio-entry.is-collapsible > .biblio-line {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js .biblio-note {
+    transition: grid-template-rows 0.2s ease, opacity 0.18s ease, margin 0.2s ease,
+      visibility 0s 0.2s;
+  }
+  html.js .biblio-entry.is-open > .biblio-note {
+    transition: grid-template-rows 0.2s ease, opacity 0.18s ease, margin 0.2s ease,
+      visibility 0s 0s;
+  }
 }
 
 /* === Commonplace === */
@@ -544,12 +629,17 @@ article sup a:hover {
   margin: 0;
 }
 
-/* Override blockquote p:last-child muting — our quote is a single paragraph. */
+/* Commonplace quotes are rendered from frontmatter and may span multiple paragraphs; every
+   paragraph stays styled as quote text, with a gap between stacked paragraphs. */
 .quote blockquote p {
   font-style: italic;
   color: var(--text);
   font-size: inherit;
   margin-top: 0;
+}
+
+.quote blockquote p + p {
+  margin-top: 0.75rem;
 }
 
 .quote-large blockquote {
@@ -594,7 +684,7 @@ article sup a:hover {
   }
 
   .site-nav {
-    gap: 1rem;
+    gap: 1.2rem;
     font-size: 0.75rem;
   }
 
