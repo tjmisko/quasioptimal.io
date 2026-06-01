@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ config.title }}{% endblock title %}</title>
+    <link rel="stylesheet" href="/style.css">
+    {% block head %}{% endblock head %}
+  </head>
+  <body class="{% block bodyclass %}{% endblock bodyclass %}">
+    {% block chrome %}
+    {% set cp = current_path | default(value="") %}
+    <header>
+      <a class="site-title-link" href="/"><h1 class="site-title">Quasioptimal</h1></a>
+      <nav class="site-nav">
+        <a href="/"{% if cp == "/" or cp is starting_with("/posts") %} aria-current="page"{% endif %}>Writing</a>
+        <a href="/bibliography/"{% if cp is starting_with("/bibliography") %} aria-current="page"{% endif %}>Bibliography</a>
+        <a href="/commonplace/"{% if cp is starting_with("/commonplace") %} aria-current="page"{% endif %}>Commonplace</a>
+      </nav>
+      <hr class="site-rule">
+    </header>
+    {% endblock chrome %}
+    {% block content %}{% endblock content %}
+  </body>
+</html>

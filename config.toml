@@ -1,0 +1,17 @@
+# Zola configuration — https://www.getzola.org/documentation/getting-started/configuration/
+# Build with `zola build` (outputs to public/) or preview with `zola serve`.
+
+base_url = "https://quasioptimal.io"
+title = "Quasioptimal"
+
+# Clean URLs: every page is written as <slug>/index.html and served at /<slug>/.
+compile_sass = false
+build_search_index = false
+
+# Code highlighting is left at Zola's default (off): the one post has no fenced code, and
+# highlight.js (CDN, loaded in templates/post.html) handles any future blocks — same as the
+# old setup. To use Zola's built-in highlighter instead, add a [markdown] table with a
+# `highlighting` config (see the Zola docs for your version) and drop the CDN tags.
+
+[extra]
+author = "Tristan Misko"

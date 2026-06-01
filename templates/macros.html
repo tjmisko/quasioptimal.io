@@ -1,0 +1,18 @@
+{# Shared rendering macros. Import with: {% import "macros.html" as macros %} #}
+
+{# One commonplace quote. Mirrors the old js/commonplace.js markup so style.css
+   needs no changes: figure.quote > blockquote > p, then attribution and note. #}
+{% macro quote(entry, class) %}
+<figure class="{{ class }}">
+  <blockquote><p>{{ entry.quote }}</p></blockquote>
+  {%- if entry.author or entry.source %}
+  <p class="quote-attr">
+    {%- if entry.author %}&mdash; {{ entry.author }}{% endif -%}
+    {%- if entry.source %}{% if entry.author %}, {% else %}&mdash; {% endif %}{% if entry.url %}<a href="{{ entry.url }}" rel="noopener"><cite>{{ entry.source }}</cite></a>{% else %}<cite>{{ entry.source }}</cite>{% endif %}{% endif -%}
+  </p>
+  {%- endif %}
+  {%- if entry.note %}
+  <p class="quote-note">{{ entry.note }}</p>
+  {%- endif %}
+</figure>
+{% endmacro quote %}
