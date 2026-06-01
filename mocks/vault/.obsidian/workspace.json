@@ -1,0 +1,1 @@
+{"_comment": "A stand-in for Obsidian's hidden config dir. The walker must skip hidden directories entirely, so nothing here is ever scanned. BODY_SENTINEL_DO_NOT_PUBLISH"}
