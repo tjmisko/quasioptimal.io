@@ -14,7 +14,12 @@
       // doesn't flash the default section. js/spa.js takes over for animated switching once
       // loaded; even if spa.js fails to load, nav clicks fall back to full reloads and this
       // script still shows the right section on arrival.
+      //
+      // The `js` class marks that scripting is on, so CSS can collapse progressive-enhancement
+      // widgets (e.g. the bibliography blurbs) from the first paint — no flash — while leaving
+      // them fully visible when JS is disabled.
       (function () {
+        document.documentElement.classList.add("js");
         var ok = { writing: 1, commonplace: 1, bibliography: 1 };
         var h = location.hash.slice(1);
         document.documentElement.setAttribute("data-panel", ok[h] ? h : "writing");

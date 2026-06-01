@@ -407,20 +407,59 @@ work because the post template loads KaTeX.
 It appears on the home page automatically — `index.html` loops the posts section, newest
 first. No list to hand-edit.
 
-**A bibliography entry** — append an object to `data/bibliography.json`:
-```json
-{ "title": "…", "author": "…", "year": 2024, "type": "book", "topic": "…", "url": "…", "note": "…" }
-```
-`url` and `note` are optional. `type: "book"` italicises the title; anything else quotes it.
-Entries group by `topic` and sort by author.
+**Sources and commonplace quotes are GENERATED, not hand-edited.** `data/bibliography.json`
+and `data/commonplace.json` are produced by the `zk2data` tool (`tools/zk2data/`) from the
+**YAML frontmatter** of a private Obsidian vault. The note **body is never read** — only an
+explicit allowlist of frontmatter fields is published, so nothing private can leak. See
+`tools/zk2data/README.md` for the full safety model.
 
-**A commonplace quote** — append to `data/commonplace.json`:
-```json
-{ "quote": "…", "author": "…", "source": "…", "url": "…", "note": "…" }
-```
-Only `quote` is required.
+A note opts in by carrying a `public-*` field — presence is necessary and sufficient:
 
-Then `zola build` (or rely on §8/§9). Adding entries never touches a template.
+- **A source** — any note with a `public-note` field (the blurb explaining why it's listed):
+  ```yaml
+  ---
+  title: "Categories for the Working Mathematician"
+  author: "Mac Lane, Saunders"   # "Last, First": surname shown, sorts by surname
+  year: 1978
+  tags: [book]                   # book → italic title; anything else is quoted
+  topic: "Mathematics"           # groups entries; default "Uncategorized"
+  public-link: "https://…"       # optional → links the title
+  public-review: my-slug         # optional → book-and-pencil icon → /reviews/my-slug/ (or a full URL)
+  public-note: |
+    Why it's here. **Markdown** and multiple paragraphs are supported.
+  ---
+  Private reading notes below — never published.
+  ```
+
+  Longer reviews are public, blog-style pages you author in `content/reviews/<slug>.md` (with
+  `template = "review.html"`); `public-review` just links to one. See `tools/zk2data/README.md`.
+
+- **A commonplace quote** — any note with a `public-quote` field:
+  ```yaml
+  ---
+  public-quote: |
+    The quote, which **may** span multiple paragraphs with *inline* emphasis or
+    [links](https://…).
+  author: "…"          # optional
+  source: "…"          # optional → rendered in <cite>
+  public-link: "…"     # optional → links the source
+  ---
+  Private gloss below — never published.
+  ```
+
+Use a YAML **literal block scalar** (`|`) for the long-form fields: it's verbatim (no quoting
+pitfalls) and a blank line becomes a paragraph. The tool renders Markdown with the same engine
+Zola uses.
+
+Then regenerate and rebuild — run this where the vault lives, then commit the JSON (the server
+only needs the committed JSON, never the vault):
+```bash
+make data VAULT=/path/to/vault      # or set QUASIOPTIMAL_VAULT
+make verify-no-leak                 # sanity check
+zola build                          # or rely on §8/§9
+git add -A && git commit -m "data: refresh from notes"
+```
+Adding entries never touches a template. (A new post is still added by hand as above.)
 
 ---
 

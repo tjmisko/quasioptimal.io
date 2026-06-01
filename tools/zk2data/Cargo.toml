@@ -1,0 +1,27 @@
+# zk2data — project the public frontmatter of a private Obsidian vault into the two JSON
+# data files Zola renders (data/commonplace.json, data/bibliography.json).
+#
+# This is a standalone tool, NOT part of the Zola build. Zola ignores tools/ (it only reads
+# config.toml, content/, templates/, static/, data/, sass/, themes/). Build it with cargo and
+# run `make data` from the repo root. The server/deploy only needs the committed JSON.
+[package]
+name = "zk2data"
+version = "0.1.0"
+edition = "2021"
+description = "Generate quasioptimal.io's commonplace + bibliography data from zettelkasten frontmatter"
+license = "MIT"
+
+[[bin]]
+name = "zk2data"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Maintained, API-compatible fork of the archived serde_yaml.
+serde_norway = "0.9"
+# The same CommonMark engine Zola uses internally, so rendering matches the rest of the site.
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+walkdir = "2"
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"

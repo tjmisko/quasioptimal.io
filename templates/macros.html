@@ -1,10 +1,11 @@
 {# Shared rendering macros. Import with: {% import "macros.html" as macros %} #}
 
-{# One commonplace quote. Mirrors the old js/commonplace.js markup so style.css
-   needs no changes: figure.quote > blockquote > p, then attribution and note. #}
+{# One commonplace quote. Markup: figure.quote > blockquote (one or more <p>), then attribution
+   and note. `entry.quote` is HTML rendered from the note's `public-quote` frontmatter by the
+   zk2data tool (paragraphs + inline emphasis), so it is emitted with `| safe`. #}
 {% macro quote(entry, class) %}
 <figure class="{{ class }}">
-  <blockquote><p>{{ entry.quote }}</p></blockquote>
+  <blockquote>{{ entry.quote | safe }}</blockquote>
   {%- if entry.author or entry.source %}
   <p class="quote-attr">
     {%- if entry.author %}&mdash; {{ entry.author }}{% endif -%}

@@ -1,0 +1,13 @@
+{# A review renders exactly like a blog post (same head: KaTeX/highlight; same article body),
+   so it just extends post.html and only changes the top bar so "back" returns to the Sources
+   list the reader came from. #}
+{% extends "post.html" %}
+{% block chrome %}
+    <div class="post-topbar">
+      <a href="/#bibliography" class="back-link">&larr; sources</a>
+      <p class="post-meta">{{ page.date }}</p>
+    </div>
+    <header class="post-header">
+      <h1 class="post-title">{{ page.title }}</h1>
+    </header>
+{% endblock chrome %}
