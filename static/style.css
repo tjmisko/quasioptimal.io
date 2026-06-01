@@ -605,6 +605,7 @@ article sup a:hover {
 #view {
   width: 100%;
   position: relative; /* containing block for the outgoing panel during a switch */
+  --slide-dir: 1;     /* +1 = switching toward a tab on the right, -1 = toward the left; spa.js sets it per switch */
 }
 
 #view:focus,
@@ -623,7 +624,9 @@ article sup a:hover {
 
 /* Buttery switch: compositor-only transform + opacity, never layout. The incoming panel
    defines the new height immediately; the outgoing one is lifted out of flow and slides out
-   on top of it, so nothing reflows mid-animation. */
+   on top of it, so nothing reflows mid-animation. Direction follows tab order via --slide-dir:
+   the incoming panel enters from the side it travels from, the outgoing exits the opposite way,
+   so Sources -> Writing mirrors Writing -> Sources. */
 .panel.is-active.anim-in {
   animation: panel-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
@@ -638,10 +641,10 @@ article sup a:hover {
 }
 
 @keyframes panel-in {
-  from { opacity: 0; transform: translateX(28px); }
+  from { opacity: 0; transform: translateX(calc(var(--slide-dir) * 28px)); }
 }
 @keyframes panel-out {
-  to { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 0; transform: translateX(calc(var(--slide-dir) * -28px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
