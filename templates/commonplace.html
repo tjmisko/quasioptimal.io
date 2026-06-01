@@ -3,8 +3,6 @@
 {% block title %}Commonplace &middot; Quasioptimal{% endblock title %}
 {% block bodyclass %}page{% endblock bodyclass %}
 {% block content %}
-    <h2 class="page-title">Commonplace</h2>
-    <p class="page-intro">A commonplace book: quotes and aphorisms worth keeping. One is drawn at random each visit.</p>
     {% set quotes = load_data(path="data/commonplace.json") %}
     {# Everything is rendered server-side now — no JS required to read the page. The
        small commonplace.js below only swaps the featured slot to a random pick per visit,

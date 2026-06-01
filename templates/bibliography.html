@@ -1,15 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Bibliography &middot; Quasioptimal{% endblock title %}
+{% block title %}Sources &middot; Quasioptimal{% endblock title %}
 {% block bodyclass %}page{% endblock bodyclass %}
 {% block content %}
-    <h2 class="page-title">Bibliography</h2>
-    <p class="page-intro">Books and articles read, cited, or worth remembering, grouped by subject.</p>
     <main id="bibliography" class="biblio">
     {% set entries = load_data(path="data/bibliography.json") %}
-    {# Topics sorted alphabetically; entries sorted by author then year within a topic.
-       (The old JS sorted by *surname*; Tera can only sort by the full author string.
-       If exact surname order matters, add a "sort_key" field to each JSON entry and
-       sort on that instead.) #}
+    {# Authors are stored "Last, First" (standard bibliography order). The display shows
+       only the surname (the part before the comma), and sorting by the full author string
+       therefore orders entries alphabetically by surname. Topics are sorted A–Z. #}
     {% set topics = entries | map(attribute="topic") | unique | sort %}
     {% for topic in topics %}
       <section class="biblio-topic-section">
@@ -18,15 +15,11 @@
         {% for entry in items %}
         <div class="biblio-entry">
           <p class="biblio-line">
+            {%- if entry.author or entry.year %}<span class="biblio-meta">{% if entry.author %}{{ entry.author | split(pat=",") | first }}{% endif %}{% if entry.author and entry.year %} &mdash; {% endif %}{% if entry.year %}{{ entry.year }}{% endif %} &mdash; </span>{% endif -%}
             {%- if entry.url %}<a class="biblio-title-link" href="{{ entry.url }}" rel="noopener">{% endif -%}
             {%- if entry.type == "book" %}<cite class="biblio-book-title">{{ entry.title }}</cite>{% else %}&ldquo;{{ entry.title }}&rdquo;{% endif -%}
             {%- if entry.url %}</a>{% endif -%}
-            {%- if entry.author or entry.year %} <span class="biblio-meta">&mdash; {% if entry.author %}{{ entry.author }}{% endif %}{% if entry.author and entry.year %}, {% endif %}{% if entry.year %}{{ entry.year }}{% endif %}</span>{% endif -%}
-            {%- if entry.type %} <span class="biblio-type">{{ entry.type }}</span>{% endif -%}
           </p>
-          {%- if entry.note %}
-          <p class="biblio-note">{{ entry.note }}</p>
-          {%- endif %}
         </div>
         {% endfor %}
       </section>

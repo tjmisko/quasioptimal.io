@@ -1,7 +1,7 @@
 [
   {
     "title": "Topology",
-    "author": "James R. Munkres",
+    "author": "Munkres, James R.",
     "year": 2000,
     "type": "book",
     "topic": "Mathematics",
@@ -9,14 +9,14 @@
   },
   {
     "title": "Categories for the Working Mathematician",
-    "author": "Saunders Mac Lane",
+    "author": "Mac Lane, Saunders",
     "year": 1978,
     "type": "book",
     "topic": "Mathematics"
   },
   {
     "title": "A Mathematical Theory of Communication",
-    "author": "Claude E. Shannon",
+    "author": "Shannon, Claude E.",
     "year": 1948,
     "type": "article",
     "topic": "Mathematics",
@@ -25,14 +25,14 @@
   },
   {
     "title": "The Structure of Scientific Revolutions",
-    "author": "Thomas S. Kuhn",
+    "author": "Kuhn, Thomas S.",
     "year": 1962,
     "type": "book",
     "topic": "Philosophy of Science"
   },
   {
     "title": "Two Dogmas of Empiricism",
-    "author": "Willard Van Orman Quine",
+    "author": "Quine, Willard Van Orman",
     "year": 1951,
     "type": "article",
     "topic": "Philosophy of Science",
@@ -40,7 +40,7 @@
   },
   {
     "title": "Computing Machinery and Intelligence",
-    "author": "Alan M. Turing",
+    "author": "Turing, Alan M.",
     "year": 1950,
     "type": "article",
     "topic": "Computer Science",
