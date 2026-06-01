@@ -21,10 +21,12 @@
     </script>
 {% endblock head %}
 {% block chrome %}
-    <a href="/" class="back-link">&larr; back</a>
+    <div class="post-topbar">
+      <a href="/" class="back-link">&larr; back</a>
+      <p class="post-meta">{{ page.date }}</p>
+    </div>
     <header class="post-header">
       <h1 class="post-title">{{ page.title }}</h1>
-      <p class="post-meta">{{ page.date }}</p>
     </header>
 {% endblock chrome %}
 {% block content %}
