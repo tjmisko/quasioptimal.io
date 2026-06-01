@@ -1,0 +1,50 @@
+[
+  {
+    "title": "Topology",
+    "author": "James R. Munkres",
+    "year": 2000,
+    "type": "book",
+    "topic": "Mathematics",
+    "note": "Placeholder entry — replace with your own."
+  },
+  {
+    "title": "Categories for the Working Mathematician",
+    "author": "Saunders Mac Lane",
+    "year": 1978,
+    "type": "book",
+    "topic": "Mathematics"
+  },
+  {
+    "title": "A Mathematical Theory of Communication",
+    "author": "Claude E. Shannon",
+    "year": 1948,
+    "type": "article",
+    "topic": "Mathematics",
+    "url": "https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf",
+    "note": "Placeholder entry — replace with your own."
+  },
+  {
+    "title": "The Structure of Scientific Revolutions",
+    "author": "Thomas S. Kuhn",
+    "year": 1962,
+    "type": "book",
+    "topic": "Philosophy of Science"
+  },
+  {
+    "title": "Two Dogmas of Empiricism",
+    "author": "Willard Van Orman Quine",
+    "year": 1951,
+    "type": "article",
+    "topic": "Philosophy of Science",
+    "url": "https://www.ditext.com/quine/quine.html"
+  },
+  {
+    "title": "Computing Machinery and Intelligence",
+    "author": "Alan M. Turing",
+    "year": 1950,
+    "type": "article",
+    "topic": "Computer Science",
+    "url": "https://academic.oup.com/mind/article/LIX/236/433/986238",
+    "note": "Placeholder entry — replace with your own."
+  }
+]
