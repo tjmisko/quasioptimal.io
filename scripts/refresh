@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# Rescan the private zettelkasten and rebuild the site IFF the generated data changed.
+#
+# Safe to run on a timer: it is idempotent, does not overlap itself under systemd, and it
+# refuses to publish if a note body ever leaks into data/ or public/ (defence in depth around
+# zk2data's own structural guarantee). Run it by hand any time to force a refresh.
+#
+# Configuration — all overridable via the environment (e.g. a systemd unit):
+#   QUASIOPTIMAL_VAULT   path to the Obsidian vault to scan                       (required)
+#   ZOLA                 zola binary           (default: zola on PATH, else /usr/local/bin/zola)
+#   ZK2DATA              prebuilt scanner      (default: tools/zk2data/target/release/zk2data)
+#
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+VAULT="${QUASIOPTIMAL_VAULT:?set QUASIOPTIMAL_VAULT to the vault path}"
+ZOLA="${ZOLA:-$(command -v zola || echo /usr/local/bin/zola)}"
+ZK2DATA="${ZK2DATA:-$ROOT/tools/zk2data/target/release/zk2data}"
+
+log() { printf '%s refresh: %s\n' "$(date -Is)" "$*"; }
+
+if [[ ! -d "$VAULT" ]]; then
+  log "vault is not a directory: $VAULT"
+  exit 1
+fi
+if [[ ! -x "$ZK2DATA" ]]; then
+  log "scanner not built: $ZK2DATA"
+  log "build it once on this box: cargo build --release --manifest-path tools/zk2data/Cargo.toml"
+  exit 1
+fi
+
+# 1. Snapshot the current data, then rescan the vault frontmatter into data/*.json.
+before="$(sha256sum data/*.json 2>/dev/null || true)"
+"$ZK2DATA" --vault "$VAULT" --out data
+after="$(sha256sum data/*.json 2>/dev/null || true)"
+
+# 2. Leak guard: never publish if a note-body sentinel slipped through.
+if grep -rIq "BODY_SENTINEL_DO_NOT_PUBLISH" data public 2>/dev/null; then
+  log "LEAK: note-body sentinel found in data/ or public/ — refusing to build"
+  exit 1
+fi
+
+# 3. Rebuild only when the generated data actually changed.
+if [[ "$before" == "$after" ]]; then
+  log "no frontmatter changes — nothing to publish"
+  exit 0
+fi
+
+log "data changed — rebuilding"
+"$ZOLA" build
+log "published"

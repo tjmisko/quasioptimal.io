@@ -10,6 +10,10 @@ edit content/template in vi  →  zola build  →  nginx serves public/  (no res
 Nothing is dynamic at request time. Zola compiles the whole site into `public/`, and nginx
 just serves those files. A rebuild is the only "deploy" step.
 
+When the private vault lives on this same server, §8 closes the loop automatically: a timer
+rescans the vault's frontmatter into `data/` and rebuilds whenever that data changes, so
+`vault edit → data/*.json → zola build → public/` runs hands-off.
+
 - [1. How the project is laid out](#1-how-the-project-is-laid-out)
 - [2. Install Zola on the server](#2-install-zola-on-the-server)
 - [3. Put the site on the server](#3-put-the-site-on-the-server)
@@ -17,7 +21,7 @@ just serves those files. A rebuild is the only "deploy" step.
 - [5. nginx configuration](#5-nginx-configuration)
 - [6. HTTPS with Certbot](#6-https-with-certbot)
 - [7. The edit → publish workflow](#7-the-edit--publish-workflow)
-- [8. Optional: auto-rebuild on save](#8-optional-auto-rebuild-on-save)
+- [8. Run the scan + rebuild on the server (the robust loop)](#8-run-the-scan--rebuild-on-the-server-the-robust-loop)
 - [9. Optional: git push-to-deploy](#9-optional-git-push-to-deploy)
 - [10. Preview before publishing](#10-preview-before-publishing)
 - [11. Cutover from the old flat HTML](#11-cutover-from-the-old-flat-html)
@@ -262,10 +266,116 @@ remove that footgun if you want.
 
 ---
 
-## 8. Optional: auto-rebuild on save
+## 8. Run the scan + rebuild on the server (the robust loop)
 
-If you'd rather never type `zola build`, have systemd watch the source dirs and rebuild on
-change. Two small unit files:
+This is the piece that makes server-side editing hands-off: a timer rescans the vault's
+frontmatter into `data/*.json` every few minutes, and the site rebuilds **only when that data
+actually changed**. It maps one-to-one onto the workflow — *rescan periodically, rebuild on
+change* — and it's pull-based, so it can't miss an edit the way an event watcher can.
+
+```
+vault frontmatter ──(timer)──▶ zk2data ──▶ data/*.json ──(if changed)──▶ zola build ──▶ public/
+```
+
+This section assumes the vault is present on this server (however you sync it — Syncthing,
+`git pull`, rsync, or editing in place). The loop just reads whatever files are on disk.
+
+### 8.1 Build the scanner once
+
+`zk2data` is a small Rust program in `tools/zk2data/`. Build it once on the server — it always
+compiles for this box's own architecture, so it's the safe choice on ARM or x86 alike.
+
+```bash
+# A current Rust toolchain. Debian's apt `cargo` is often too old for the tool's deps
+# (clap 4 / pulldown-cmark 0.13), so rustup is the reliable choice:
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+. "$HOME/.cargo/env"
+# (Only if your distro's package is recent — Debian trixie+, Fedora — apt/dnf works too:
+#   sudo apt install cargo   #  needs rustc ≥ 1.74)
+
+cd /var/www/quasioptimal.io
+cargo build --release --manifest-path tools/zk2data/Cargo.toml
+./tools/zk2data/target/release/zk2data --vault "$QUASIOPTIMAL_VAULT" --out data   # smoke test
+```
+
+The binary lands at `tools/zk2data/target/release/zk2data`. Rebuild it (same command) only if
+you change the tool's source. `target/` is git-ignored, so it never deploys anywhere.
+
+### 8.2 The refresh script
+
+`scripts/refresh` (tracked in the repo) is the whole loop in one idempotent command:
+
+1. rescan the vault into `data/*.json`;
+2. **leak-guard** — refuse to go further if a note-body sentinel ever shows up in `data/` or
+   `public/` (defence in depth around zk2data's own structural guarantee);
+3. run `zola build` **only if** the data changed (it sha-compares `data/*.json` before/after).
+
+Force a refresh by hand any time:
+
+```bash
+QUASIOPTIMAL_VAULT=/path/to/vault scripts/refresh
+```
+
+It reads three environment variables, all optional except the vault:
+
+| variable             | default                                       | meaning                   |
+|----------------------|-----------------------------------------------|---------------------------|
+| `QUASIOPTIMAL_VAULT` | — (required)                                  | the vault to scan         |
+| `ZOLA`               | `zola` on `PATH`, else `/usr/local/bin/zola`  | the Zola binary           |
+| `ZK2DATA`            | `tools/zk2data/target/release/zk2data`        | the scanner built in 8.1  |
+
+Because it rebuilds only on a real change, running it every few minutes is cheap and quiet.
+
+### 8.3 Run it on a timer
+
+Two unit files turn `scripts/refresh` into a periodic job. Replace `deploy` with the user that
+owns `/var/www/quasioptimal.io`, and set the vault path.
+
+`/etc/systemd/system/quasioptimal-refresh.service`
+```ini
+[Unit]
+Description=Rescan the zettelkasten and rebuild quasioptimal.io on change
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/var/www/quasioptimal.io
+Environment=QUASIOPTIMAL_VAULT=/home/deploy/vault
+Environment=ZOLA=/usr/local/bin/zola
+ExecStart=/var/www/quasioptimal.io/scripts/refresh
+Nice=10
+```
+
+`/etc/systemd/system/quasioptimal-refresh.timer`
+```ini
+[Unit]
+Description=Rescan the zettelkasten every few minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min      # 5 minutes after each run finishes; tune to taste
+Persistent=true           # catch up a missed run after downtime
+
+[Install]
+WantedBy=timers.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now quasioptimal-refresh.timer
+systemctl list-timers quasioptimal-refresh.timer     # confirm it's scheduled
+journalctl -u quasioptimal-refresh.service -f         # watch a run live
+```
+
+A `oneshot` service can't overlap itself: if a scan is still running when the timer fires
+again, systemd just queues the next one. And because this service is the only thing that writes
+`data/` and builds, there's no race with the optional watcher below.
+
+### 8.4 Optional: instant rebuilds when you SSH-edit content
+
+The timer covers vault edits. If you also edit posts or templates directly on the server and
+want them live immediately (rather than at the next `zola build` you run by hand), add a path
+watcher for *those* sources. Note it deliberately does **not** watch `data/`, which §8.3 owns:
 
 `/etc/systemd/system/zola-build.service`
 ```ini
@@ -281,12 +391,11 @@ ExecStart=/usr/local/bin/zola build
 `/etc/systemd/system/zola-build.path`
 ```ini
 [Unit]
-Description=Watch Zola sources and rebuild
+Description=Watch site sources and rebuild
 
 [Path]
 PathChanged=/var/www/quasioptimal.io/content
 PathChanged=/var/www/quasioptimal.io/templates
-PathChanged=/var/www/quasioptimal.io/data
 PathChanged=/var/www/quasioptimal.io/static
 PathChanged=/var/www/quasioptimal.io/config.toml
 Unit=zola-build.service
@@ -300,13 +409,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now zola-build.path
 ```
 
-Note: a systemd `.path` unit fires on changes to the *named directory's* entries; for changes
+A systemd `.path` unit fires on changes to the *named directory's* own entries; for changes
 deep in subtrees, an `inotifywait` loop or `entr` is more thorough:
 
 ```bash
-# alternative: rebuild whenever anything under the source dirs changes
 while inotifywait -r -e modify,create,delete,move \
-    content templates data static config.toml; do
+    content templates static config.toml; do
   zola build
 done
 ```
@@ -451,15 +559,17 @@ Use a YAML **literal block scalar** (`|`) for the long-form fields: it's verbati
 pitfalls) and a blank line becomes a paragraph. The tool renders Markdown with the same engine
 Zola uses.
 
-Then regenerate and rebuild — run this where the vault lives, then commit the JSON (the server
-only needs the committed JSON, never the vault):
+Then regenerate and rebuild. On a laptop that holds the vault, run this and commit the JSON
+(the server then only needs the committed JSON, never the vault):
 ```bash
 make data VAULT=/path/to/vault      # or set QUASIOPTIMAL_VAULT
 make verify-no-leak                 # sanity check
 zola build                          # or rely on §8/§9
 git add -A && git commit -m "data: refresh from notes"
 ```
-Adding entries never touches a template. (A new post is still added by hand as above.)
+If instead the vault lives on the server, you don't do any of this by hand: §8's timer rescans
+and rebuilds on change. Adding entries never touches a template. (A new post is still added by
+hand as above.)
 
 ---
 
