@@ -152,6 +152,12 @@ fn generate(vault: &Path) -> Result<(Vec<Quote>, Vec<BibEntry>, Stats)> {
                             .clone()
                             .unwrap_or_else(|| "Uncategorized".to_string()),
                         url: fm.public_link.clone(),
+                        wikipedia: fm
+                            .public_wikipedia
+                            .as_deref()
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(str::to_string),
                         review: fm.public_review.as_deref().and_then(resolve_review),
                         note: Some(render_markdown(note_md)),
                     });

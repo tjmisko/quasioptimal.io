@@ -51,7 +51,15 @@
           {%- if entry.url %}<a class="biblio-title-link" href="{{ entry.url }}" rel="noopener">{% endif -%}
           {%- if entry.type == "book" %}<cite class="biblio-book-title">{{ entry.title }}</cite>{% else %}&ldquo;{{ entry.title }}&rdquo;{% endif -%}
           {%- if entry.url %}</a>{% endif -%}
-          {%- if entry.review %}<a class="biblio-review-link" href="{{ entry.review }}" rel="noopener" aria-label="Read the review of {{ entry.title }}"><svg class="biblio-review-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg></a>{% endif -%}
+          {# Right-aligned link icons, each shown only when the note set its `public-*` field:
+             external source page (public-link/url), Wikipedia (public-wikipedia), and a longer
+             review (public-review). They are real links, so a click follows them rather than
+             toggling the blurb. #}
+          {%- if entry.url or entry.wikipedia or entry.review %}<span class="biblio-links">
+            {%- if entry.url %}<a class="biblio-link biblio-source-link" href="{{ entry.url }}" rel="noopener" aria-label="Open the source page for {{ entry.title }}"><svg class="biblio-link-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg></a>{% endif -%}
+            {%- if entry.wikipedia %}<a class="biblio-link biblio-wiki-link" href="{{ entry.wikipedia }}" rel="noopener" aria-label="Wikipedia article for {{ entry.title }}"><svg class="biblio-link-icon biblio-wiki-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><text x="12" y="18" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="currentColor">W</text></svg></a>{% endif -%}
+            {%- if entry.review %}<a class="biblio-link biblio-review-link" href="{{ entry.review }}" rel="noopener" aria-label="Read the review of {{ entry.title }}"><svg class="biblio-link-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg></a>{% endif -%}
+          </span>{% endif -%}
         </p>
         {# Blurb: HTML rendered from the note's `public-note` frontmatter, so emitted with `| safe`.
            Visible by default; with JS it collapses into a click-to-expand panel (js/bibliography.js).
