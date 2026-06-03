@@ -539,20 +539,28 @@ article sup a:hover {
   margin-bottom: 0.75rem;
 }
 
-/* Right-aligned link to a longer review (book-and-pencil icon), shown only when the note set
-   `public-review`. It's a real link, so a click follows it rather than toggling the blurb. */
-.biblio-review-link {
+/* Right-aligned row of link icons (external source page, Wikipedia, longer review), each shown
+   only when the note set the matching `public-*` field. They are real links, so a click follows
+   them rather than toggling the blurb. */
+.biblio-links {
   float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   margin-left: 0.6rem;
+}
+
+.biblio-link {
+  display: inline-flex;
   color: var(--muted);
   line-height: 1;
 }
 
-.biblio-review-link:hover {
+.biblio-link:hover {
   color: var(--accent);
 }
 
-.biblio-review-icon {
+.biblio-link-icon {
   display: block;
   width: 1.05em;
   height: 1.05em;

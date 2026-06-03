@@ -54,6 +54,10 @@ pub struct NoteFrontmatter {
     /// `<cite>` (emitted as the `url` key the templates already use).
     #[serde(default, rename = "public-link")]
     pub public_link: Option<String>,
+    /// Link to the source's Wikipedia article. Surfaced as its own icon in the bibliography,
+    /// independent of `public-link` (emitted as the `wikipedia` key the templates use).
+    #[serde(default, rename = "public-wikipedia")]
+    pub public_wikipedia: Option<String>,
     /// Presence of this field is necessary and sufficient to publish a Commonplace entry.
     #[serde(default, rename = "public-quote")]
     pub public_quote: Option<String>,
@@ -94,6 +98,9 @@ pub struct BibEntry {
     pub topic: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    /// URL of the source's Wikipedia article, if the note set `public-wikipedia`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wikipedia: Option<String>,
     /// Resolved URL of a longer review, if the note links one (from `public-review`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub review: Option<String>,
@@ -205,5 +212,19 @@ mod tests {
         // A bare `url:` is not on the allowlist and is therefore ignored.
         let none: NoteFrontmatter = serde_norway::from_str("url: https://example.com/y\n").unwrap();
         assert_eq!(none.public_link, None);
+    }
+
+    #[test]
+    fn public_wikipedia_deserializes_from_the_hyphenated_key() {
+        let fm: NoteFrontmatter =
+            serde_norway::from_str("public-wikipedia: https://en.wikipedia.org/wiki/X\n").unwrap();
+        assert_eq!(
+            fm.public_wikipedia.as_deref(),
+            Some("https://en.wikipedia.org/wiki/X")
+        );
+        // A bare `wikipedia:` is not on the allowlist and is therefore ignored.
+        let none: NoteFrontmatter =
+            serde_norway::from_str("wikipedia: https://en.wikipedia.org/wiki/Y\n").unwrap();
+        assert_eq!(none.public_wikipedia, None);
     }
 }

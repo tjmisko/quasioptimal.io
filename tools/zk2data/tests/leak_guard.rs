@@ -116,6 +116,27 @@ fn rendered_markdown_and_shape_are_correct() {
         .find(|e| e["title"] == "The Structure of Scientific Revolutions")
         .expect("Kuhn should be published");
     assert_eq!(kuhn["review"], "https://example.com/reviews/kuhn");
+    // `public-wikipedia` is emitted as its own `wikipedia` key, independent of `url`…
+    let shannon = entries
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["title"] == "A Mathematical Theory of Communication")
+        .expect("Shannon should be published");
+    assert_eq!(
+        shannon["wikipedia"],
+        "https://en.wikipedia.org/wiki/A_Mathematical_Theory_of_Communication",
+        "public-wikipedia must become the entry's wikipedia url"
+    );
+    assert_eq!(
+        shannon["url"], "https://example.com/shannon",
+        "public-wikipedia must not overwrite the entry's url"
+    );
+    // …and a note without `public-wikipedia` omits the key entirely.
+    assert!(
+        kuhn.get("wikipedia").is_none(),
+        "a note lacking public-wikipedia must not emit a wikipedia key"
+    );
 }
 
 #[test]
